@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成绩管理后台</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .modal-bg { backdrop-filter: blur(4px); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation: fadeUp 0.2s ease; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .spin { animation: spin 0.8s linear infinite; display:inline-block; }
+  .score-input { -moz-appearance: textfield; }
+  .score-input::-webkit-inner-spin-button { display: none; }
+</style>
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: {
+      "background":"#f8f9fb","surface-bright":"#f8f9fb","surface":"#f8f9fb",
+      "surface-container-lowest":"#ffffff","surface-container-low":"#f2f4f6",
+      "surface-container":"#eceef0","surface-container-high":"#e6e8ea",
+      "surface-variant":"#e0e3e5","outline-variant":"#c4c6cf","outline":"#74777f",
+      "primary":"#002046","primary-container":"#1b365d","on-primary":"#ffffff",
+      "on-surface":"#191c1e","on-surface-variant":"#44474e",
+      "secondary-fixed":"#ffdea5","secondary":"#775a19",
+      "error":"#ba1a1a","surface-tint":"#465f88"
+    }}}
+  }
+</script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+<!-- 顶部导航 -->
+<header class="bg-primary border-b-2 border-secondary-fixed shadow-sm fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 md:px-10">
+  <div class="flex items-center gap-3">
+    <span class="material-symbols-outlined text-white text-2xl">admin_panel_settings</span>
+    <div>
+      <h1 class="font-bold text-white text-base md:text-lg leading-tight">成绩管理后台</h1>
+      <p class="text-white/50 text-xs hidden md:block">浙江省普通高中学业水平考试</p>
+    </div>
+  </div>
+  <a href="/" target="_blank"
+    class="flex items-center gap-1.5 text-white/70 hover:text-white text-xs border border-white/20 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
+    <span class="material-symbols-outlined text-base">open_in_new</span>
+    <span class="hidden md:inline">前台查询</span>
+  </a>
+</header>
+
+<main class="flex-grow pt-20 pb-10 px-4 md:px-10">
+
+  <!-- 统计卡片 -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 mb-5">
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/40 shadow-sm">
+      <p class="text-xs text-on-surface-variant">考生总数</p>
+      <p id="statTotal" class="text-2xl font-bold text-primary mt-1">—</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/40 shadow-sm">
+      <p class="text-xs text-on-surface-variant">全局平均分</p>
+      <p id="statAvg" class="text-2xl font-bold text-primary mt-1">—</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/40 shadow-sm">
+      <p class="text-xs text-on-surface-variant">最高平均分</p>
+      <p id="statMax" class="text-2xl font-bold text-green-600 mt-1">—</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/40 shadow-sm">
+      <p class="text-xs text-on-surface-variant">自动生成数</p>
+      <p id="statAuto" class="text-2xl font-bold text-orange-500 mt-1">—</p>
+    </div>
+  </div>
+
+  <!-- 操作栏 -->
+  <div class="flex flex-col md:flex-row gap-3 justify-between items-start md:items-center mb-4">
+    <div class="relative w-full md:w-72">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-xl">search</span>
+      <input id="searchInput" type="text" placeholder="搜索姓名或准考证号…" oninput="renderTable()"
+        class="pl-10 pr-4 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 w-full">
+    </div>
+    <button onclick="openModal(null)"
+      class="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm w-full md:w-auto justify-center">
+      <span class="material-symbols-outlined text-xl">person_add</span>新增考生
+    </button>
+  </div>
+
+  <!-- 表格 -->
+  <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low text-on-surface-variant text-xs font-semibold border-b border-outline-variant">
+            <th class="py-3 px-4">姓名</th>
+            <th class="py-3 px-4">准考证号</th>
+            <th class="py-3 px-4 hidden lg:table-cell">就读学校</th>
+            <th class="py-3 px-4 text-center hidden md:table-cell">平均分</th>
+            <th class="py-3 px-4 text-center hidden md:table-cell">来源</th>
+            <th class="py-3 px-4 text-right">操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="text-sm text-on-surface divide-y divide-surface-variant"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="hidden py-16 text-center">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant block mb-2">person_search</span>
+      <p class="text-on-surface-variant text-sm">没有找到匹配的考生</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ====== 编辑/新增 模态框 ====== -->
+<div id="modal" class="hidden fixed inset-0 z-50 flex items-start justify-center modal-bg bg-black/40 py-8 px-4 overflow-y-auto">
+  <div class="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl fade-up my-auto">
+
+    <div class="bg-primary px-6 py-5 rounded-t-2xl flex justify-between items-center">
+      <h2 id="modalTitle" class="text-white font-bold text-lg"></h2>
+      <button onclick="closeModal()" class="text-white/60 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="p-6 md:p-8 space-y-6">
+
+      <!-- 基本信息 -->
+      <div>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">基本信息</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-semibold text-on-surface block mb-1.5">姓名 <span class="text-error">*</span></label>
+            <input id="f_name" type="text" placeholder="考生姓名"
+              class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-on-surface block mb-1.5">准考证号 <span class="text-error">*</span></label>
+            <input id="f_examId" type="text" placeholder="16位准考证号"
+              class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary font-mono">
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs font-semibold text-on-surface block mb-1.5">就读学校 <span class="text-error">*</span></label>
+            <input id="f_school" type="text" placeholder="学校全称"
+              class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary">
+          </div>
+        </div>
+      </div>
+
+      <!-- 科目成绩 -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">各科成绩</p>
+          <button onclick="previewScores()" id="previewBtn"
+            class="flex items-center gap-1.5 text-xs text-primary border border-primary/30 px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-colors">
+            <span class="material-symbols-outlined text-sm">casino</span>随机填充
+          </button>
+        </div>
+        <div id="scoresGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+      </div>
+
+      <!-- 错误 -->
+      <div id="modalError" class="hidden items-center gap-2 bg-red-50 text-error text-sm px-4 py-3 rounded-lg border border-red-200">
+        <span class="material-symbols-outlined text-base flex-shrink-0">error_outline</span>
+        <span id="modalErrorText"></span>
+      </div>
+
+    </div>
+
+    <div class="px-6 md:px-8 pb-6 pt-4 flex gap-3 justify-end border-t border-surface-variant">
+      <button onclick="closeModal()" class="px-5 py-2.5 border border-outline-variant rounded-lg text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors">取消</button>
+      <button id="saveBtn" onclick="saveStudent()"
+        class="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm flex items-center gap-2">
+        <span class="material-symbols-outlined text-base">save</span>保存
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ====== 删除确认 ====== -->
+<div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-bg bg-black/40 px-4">
+  <div class="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm fade-up p-6">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-error">delete</span>
+      </div>
+      <div>
+        <p class="font-bold text-on-surface">确认删除</p>
+        <p id="deleteDesc" class="text-xs text-on-surface-variant mt-0.5"></p>
+      </div>
+    </div>
+    <div class="flex gap-3 justify-end">
+      <button onclick="closeDeleteModal()" class="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-variant transition-colors">取消</button>
+      <button onclick="confirmDelete()" class="px-4 py-2 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-on-surface text-white text-sm px-5 py-3 rounded-xl shadow-xl items-center gap-2 max-w-xs fade-up">
+  <span id="toastIcon" class="material-symbols-outlined text-lg"></span>
+  <span id="toastText"></span>
+</div>
+
+<script>
+  let SUBJECTS = [], SUBJECT_RANGES = {}, students = [], editingId = null, deletingId = null;
+
+  async function init() {
+    try {
+      const r = await fetch('/api/admin/students');
+      const d = await r.json();
+      students = d.students; SUBJECTS = d.subjects; SUBJECT_RANGES = d.subjectRanges || {};
+      renderStats(); renderTable();
+    } catch { showToast('error', '加载失败，请刷新'); }
+  }
+
+  function avg(s) {
+    const v = Object.values(s.scores || {});
+    return v.length ? v.reduce((a,b)=>a+b,0)/v.length : 0;
+  }
+
+  function renderStats() {
+    document.getElementById('statTotal').textContent = students.length;
+    if (!students.length) return;
+    const avgs = students.map(avg);
+    const ga = avgs.reduce((a,b)=>a+b,0)/avgs.length;
+    document.getElementById('statAvg').textContent = ga.toFixed(1);
+    document.getElementById('statMax').textContent = Math.max(...avgs).toFixed(1);
+    document.getElementById('statAuto').textContent = students.filter(s=>s.autoGenerated).length;
+  }
+
+  function renderTable() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const list = students.filter(s => s.name.toLowerCase().includes(q) || s.examId.toLowerCase().includes(q));
+    const tbody = document.getElementById('tableBody');
+    const empty = document.getElementById('emptyState');
+    if (!list.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    tbody.innerHTML = list.map((s,i) => {
+      const a = avg(s).toFixed(1);
+      const autoTag = s.autoGenerated
+        ? `<span class="inline-flex items-center gap-0.5 text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full border border-orange-200"><span class="material-symbols-outlined text-xs">auto_awesome</span>自动</span>`
+        : `<span class="text-xs text-on-surface-variant">手动</span>`;
+      return `
+        <tr class="hover:bg-surface-bright/60 transition-colors">
+          <td class="py-3.5 px-4 font-semibold">${s.name}</td>
+          <td class="py-3.5 px-4 font-mono text-xs text-on-surface-variant">${s.examId}</td>
+          <td class="py-3.5 px-4 hidden lg:table-cell text-xs text-on-surface-variant">${s.school}</td>
+          <td class="py-3.5 px-4 text-center hidden md:table-cell font-mono font-bold text-primary">${a}</td>
+          <td class="py-3.5 px-4 text-center hidden md:table-cell">${autoTag}</td>
+          <td class="py-3.5 px-4 text-right">
+            <div class="flex gap-1 justify-end">
+              <button onclick="openModal(${s.id})" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors" title="编辑">
+                <span class="material-symbols-outlined text-lg">edit</span>
+              </button>
+              <button onclick="openDeleteModal(${s.id},'${s.name.replace(/'/g,"\\'")}\")" class="p-1.5 rounded-lg hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors" title="删除">
+                <span class="material-symbols-outlined text-lg">delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function openModal(id) {
+    editingId = id;
+    const s = id !== null ? students.find(x=>x.id===id) : null;
+    document.getElementById('modalTitle').textContent = s ? `编辑考生：${s.name}` : '新增考生';
+    document.getElementById('f_name').value = s?.name || '';
+    document.getElementById('f_examId').value = s?.examId || '';
+    document.getElementById('f_school').value = s?.school || '';
+    document.getElementById('modalError').classList.add('hidden');
+
+    const grid = document.getElementById('scoresGrid');
+    grid.innerHTML = SUBJECTS.map(sub => {
+      const val = s?.scores?.[sub] ?? '';
+      const range = SUBJECT_RANGES[sub];
+      const hint = range ? `${range[0]}–${range[1]}` : '0–150';
+      return `
+        <div>
+          <label class="text-xs font-semibold text-on-surface flex justify-between mb-1">
+            <span>${sub}</span><span class="text-on-surface-variant font-normal">${hint}</span>
+          </label>
+          <input type="number" id="score_${sub}" value="${val}" min="0" max="150" placeholder="—"
+            class="score-input w-full px-3 py-2 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 text-center font-mono">
+        </div>`;
+    }).join('');
+
+    document.getElementById('modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('f_name').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+    document.body.style.overflow = ''; editingId = null;
+  }
+
+  async function previewScores() {
+    const btn = document.getElementById('previewBtn');
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm spin">progress_activity</span>生成中…';
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/admin/preview-scores');
+      const d = await r.json();
+      for (const [sub, score] of Object.entries(d.scores)) {
+        const el = document.getElementById(`score_${sub}`);
+        if (el) el.value = score;
+      }
+    } finally {
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">casino</span>随机填充';
+      btn.disabled = false;
+    }
+  }
+
+  async function saveStudent() {
+    const name = document.getElementById('f_name').value.trim();
+    const examId = document.getElementById('f_examId').value.trim();
+    const school = document.getElementById('f_school').value.trim();
+    if (!name || !examId || !school) { showModalError('请填写姓名、准考证号和学校'); return; }
+    const scores = {};
+    for (const sub of SUBJECTS) {
+      const v = document.getElementById(`score_${sub}`).value;
+      if (v !== '') scores[sub] = Number(v);
+    }
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined spin text-base">progress_activity</span>保存中…';
+    try {
+      const isEdit = editingId !== null;
+      const res = await fetch(isEdit ? `/api/admin/students/${editingId}` : '/api/admin/students', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, examId, school, scores })
+      });
+      const data = await res.json();
+      if (!res.ok) { showModalError(data.error || '保存失败'); return; }
+      if (isEdit) { const i = students.findIndex(s=>s.id===editingId); if(i!==-1) students[i]=data.student; }
+      else students.push(data.student);
+      renderStats(); renderTable(); closeModal();
+      showToast('check_circle', isEdit ? '考生信息已更新' : '考生已添加');
+    } catch { showModalError('网络错误，请重试'); }
+    finally { btn.disabled=false; btn.innerHTML='<span class="material-symbols-outlined text-base">save</span>保存'; }
+  }
+
+  function openDeleteModal(id, name) {
+    deletingId = id;
+    document.getElementById('deleteDesc').textContent = `将永久删除「${name}」的所有成绩数据`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.body.style.overflow = ''; deletingId = null;
+  }
+
+  async function confirmDelete() {
+    try {
+      await fetch(`/api/admin/students/${deletingId}`, { method:'DELETE' });
+      students = students.filter(s=>s.id!==deletingId);
+      renderStats(); renderTable(); closeDeleteModal();
+      showToast('check_circle', '已删除');
+    } catch { showToast('error','网络错误'); }
+  }
+
+  function showModalError(msg) {
+    const b = document.getElementById('modalError');
+    document.getElementById('modalErrorText').textContent = msg;
+    b.classList.remove('hidden'); b.classList.add('flex');
+  }
+
+  let _tt;
+  function showToast(icon, msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastIcon').textContent = icon;
+    document.getElementById('toastText').textContent = msg;
+    t.classList.remove('hidden'); t.classList.add('flex');
+    clearTimeout(_tt); _tt = setTimeout(()=>{ t.classList.add('hidden'); t.classList.remove('flex'); }, 3000);
+  }
+
+  document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal(); });
+  document.getElementById('deleteModal').addEventListener('click', e => { if(e.target===document.getElementById('deleteModal')) closeDeleteModal(); });
+
+  init();
+</script>
+</body>
+</html>

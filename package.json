@@ -1,0 +1,16 @@
+{
+  "name": "zhejiang-score-query",
+  "version": "3.0.0",
+  "description": "浙江省普通高中学业水平考试成绩查询系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
