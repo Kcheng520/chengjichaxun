@@ -151,6 +151,19 @@ const server = http.createServer(async (req, res) => {
     send(res, 200, { scores: generateScores() }); return;
   }
 
+  // 按 id 查单个考生（结果页用）
+  if (method === 'GET' && pathname.startsWith('/api/student/')) {
+    const id = parseInt(pathname.split('/').pop());
+    try {
+      const { rows } = await pool.query('SELECT * FROM students WHERE id = $1', [id]);
+      if (!rows.length) { send(res, 404, { error: '考生不存在' }); return; }
+      send(res, 200, { success: true, student: rowToStudent(rows[0]) });
+    } catch (e) {
+      send(res, 500, { error: '数据库错误' });
+    }
+    return;
+  }
+
   res.writeHead(404); res.end('Not found');
 });
 
