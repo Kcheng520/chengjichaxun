@@ -145,7 +145,10 @@
       const res  = await fetch(`/api/query?name=${encodeURIComponent(name)}`, { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok) { showError(data.error || '查询失败，请重试'); refreshCaptcha(); }
-      else { sessionStorage.setItem('queryResult', JSON.stringify(data.student)); window.location.href = '/result'; }
+      else {
+        sessionStorage.setItem('queryResult', JSON.stringify(data.student));
+        window.location.href = '/result?id=' + data.student.id;
+      }
     } catch { showError('网络异常，请稍后重试'); }
     finally {
       btn.disabled = false;
