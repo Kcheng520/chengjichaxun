@@ -131,6 +131,7 @@
     const btn  = document.getElementById('submitBtn');
     hideError();
     if (!name) { showError('请填写姓名'); return; }
+    if (!/^[\u4e00-\u9fa5]{2,10}$/.test(name)) { showError('请输入正确姓名'); return; }
     if (!cap)  { showError('请填写验证码'); return; }
     if (cap !== currentCaptcha) {
       showError('验证码错误，请重新输入'); refreshCaptcha();
