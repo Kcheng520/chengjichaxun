@@ -33,25 +33,23 @@
 </head>
 <body class="bg-background text-on-background min-h-screen flex flex-col">
 
-<header class="bg-primary border-b-2 border-secondary-fixed shadow-sm fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 md:px-16">
-  <div class="flex items-center gap-3">
-    <span class="material-symbols-outlined text-white text-2xl">school</span>
-    <h1 class="font-bold text-white text-sm md:text-lg leading-tight">浙江省普通高中学业水平考试成绩查询系统</h1>
-  </div>
+<header class="bg-primary border-b-2 border-secondary-fixed shadow-sm fixed top-0 w-full z-50 flex items-center px-6 py-4 md:px-16">
+  <span class="material-symbols-outlined text-white text-2xl mr-3">school</span>
+  <h1 class="font-bold text-white text-sm md:text-lg leading-tight">浙江省普通高中学业水平考试成绩查询系统</h1>
 </header>
 
 <main class="flex-grow pt-20 pb-12 px-4 md:px-0 flex justify-center items-start">
   <div class="w-full max-w-md mt-8">
-
     <div class="bg-surface-container-lowest rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden">
 
       <div class="bg-primary px-8 py-6 border-b-2 border-secondary-fixed">
         <h2 class="text-white font-bold text-lg">成绩查询</h2>
-        <p class="text-white/65 text-sm mt-1">请输入考生信息进行查询</p>
+        <p class="text-white/65 text-sm mt-1">请输入考生姓名进行查询</p>
       </div>
 
       <div class="p-8 space-y-5">
 
+        <!-- 姓名 -->
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider block">姓名 <span class="text-error normal-case">*</span></label>
           <div class="relative">
@@ -61,15 +59,7 @@
           </div>
         </div>
 
-        <div class="space-y-1.5">
-          <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider block">准考证号 <span class="text-error normal-case">*</span></label>
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-xl pointer-events-none">badge</span>
-            <input id="examId" type="text" placeholder="请输入准考证号"
-              class="block w-full pl-10 pr-3 py-3 border border-outline-variant rounded-lg bg-surface-bright focus:ring-2 focus:ring-primary/50 focus:border-primary text-on-surface text-sm outline-none transition-all font-mono tracking-wide">
-          </div>
-        </div>
-
+        <!-- 验证码 -->
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider block">验证码 <span class="text-error normal-case">*</span></label>
           <div class="flex gap-2 items-center">
@@ -105,7 +95,7 @@
           <span class="material-symbols-outlined text-sm text-surface-tint">info</span>查询须知
         </p>
         <ul class="text-xs text-on-surface-variant space-y-1 list-disc pl-4">
-          <li>请输入正确的姓名、准考证号。</li>
+          <li>请输入正确的考生姓名。</li>
           <li>如因特殊原因无法查询，请联系所在学校或当地教育考试机构。</li>
           <li>如遇网络拥堵，请避开高峰期查询。</li>
         </ul>
@@ -126,68 +116,50 @@
 
 <script>
   let currentCaptcha = '';
-
   function genCaptcha() {
     const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     return Array.from({length:4}, () => c[Math.floor(Math.random()*c.length)]).join('');
   }
-
   function refreshCaptcha() {
     currentCaptcha = genCaptcha();
     document.getElementById('captchaText').textContent = currentCaptcha;
     document.getElementById('captcha').value = '';
   }
-
   async function handleQuery() {
     const name = document.getElementById('name').value.trim();
-    const examId = document.getElementById('examId').value.trim();
-    const cap = document.getElementById('captcha').value.trim().toUpperCase();
-    const btn = document.getElementById('submitBtn');
-
+    const cap  = document.getElementById('captcha').value.trim().toUpperCase();
+    const btn  = document.getElementById('submitBtn');
     hideError();
-
-    if (!name || !examId) { showError('请填写姓名和准考证号'); return; }
-    if (!cap) { showError('请填写验证码'); return; }
+    if (!name) { showError('请填写姓名'); return; }
+    if (!cap)  { showError('请填写验证码'); return; }
     if (cap !== currentCaptcha) {
-      showError('验证码错误，请重新输入');
-      refreshCaptcha();
+      showError('验证码错误，请重新输入'); refreshCaptcha();
       const inp = document.getElementById('captcha');
-      inp.classList.add('shake');
-      setTimeout(() => inp.classList.remove('shake'), 400);
+      inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 400);
       return;
     }
-
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined spin text-xl">progress_activity</span> 查询中…';
-
     try {
-      const res = await fetch(`/api/query?name=${encodeURIComponent(name)}&examId=${encodeURIComponent(examId)}`);
+      const res  = await fetch(`/api/query?name=${encodeURIComponent(name)}`, { cache: 'no-store' });
       const data = await res.json();
-      if (!res.ok) {
-        showError(data.error || '查询失败，请重试');
-        refreshCaptcha();
-      } else {
-        sessionStorage.setItem('queryResult', JSON.stringify(data.student));
-        window.location.href = '/result';
-      }
-    } catch {
-      showError('网络异常，请稍后重试');
-    } finally {
+      if (!res.ok) { showError(data.error || '查询失败，请重试'); refreshCaptcha(); }
+      else { sessionStorage.setItem('queryResult', JSON.stringify(data.student)); window.location.href = '/result'; }
+    } catch { showError('网络异常，请稍后重试'); }
+    finally {
       btn.disabled = false;
       btn.innerHTML = '<span class="material-symbols-outlined text-xl">search</span> 查询成绩';
     }
   }
-
   function showError(msg) {
-    const box = document.getElementById('errorBox');
+    const b = document.getElementById('errorBox');
     document.getElementById('errorText').textContent = msg;
-    box.classList.remove('hidden'); box.classList.add('flex');
+    b.classList.remove('hidden'); b.classList.add('flex');
   }
   function hideError() {
-    const box = document.getElementById('errorBox');
-    box.classList.add('hidden'); box.classList.remove('flex');
+    const b = document.getElementById('errorBox');
+    b.classList.add('hidden'); b.classList.remove('flex');
   }
-
   document.addEventListener('keydown', e => { if (e.key === 'Enter') handleQuery(); });
   refreshCaptcha();
 </script>
