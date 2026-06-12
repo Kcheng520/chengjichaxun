@@ -35,7 +35,6 @@
 </head>
 <body class="bg-background text-on-background min-h-screen flex flex-col">
 
-<!-- 顶部导航 -->
 <header class="bg-primary border-b-2 border-secondary-fixed shadow-sm fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 md:px-10">
   <div class="flex items-center gap-3">
     <span class="material-symbols-outlined text-white text-2xl">admin_panel_settings</span>
@@ -53,7 +52,7 @@
 
 <main class="flex-grow pt-20 pb-10 px-4 md:px-10">
 
-  <!-- 统计卡片 -->
+  <!-- 统计 -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 mb-5">
     <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/40 shadow-sm">
       <p class="text-xs text-on-surface-variant">考生总数</p>
@@ -77,7 +76,7 @@
   <div class="flex flex-col md:flex-row gap-3 justify-between items-start md:items-center mb-4">
     <div class="relative w-full md:w-72">
       <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-xl">search</span>
-      <input id="searchInput" type="text" placeholder="搜索姓名或准考证号…" oninput="renderTable()"
+      <input id="searchInput" type="text" placeholder="搜索姓名…" oninput="renderTable()"
         class="pl-10 pr-4 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 w-full">
     </div>
     <button onclick="openModal(null)"
@@ -93,8 +92,6 @@
         <thead>
           <tr class="bg-surface-container-low text-on-surface-variant text-xs font-semibold border-b border-outline-variant">
             <th class="py-3 px-4">姓名</th>
-            <th class="py-3 px-4">准考证号</th>
-            <th class="py-3 px-4 hidden lg:table-cell">就读学校</th>
             <th class="py-3 px-4 text-center hidden md:table-cell">平均分</th>
             <th class="py-3 px-4 text-center hidden md:table-cell">来源</th>
             <th class="py-3 px-4 text-right">操作</th>
@@ -111,7 +108,7 @@
 
 </main>
 
-<!-- ====== 编辑/新增 模态框 ====== -->
+<!-- 编辑/新增 模态框 -->
 <div id="modal" class="hidden fixed inset-0 z-50 flex items-start justify-center modal-bg bg-black/40 py-8 px-4 overflow-y-auto">
   <div class="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl fade-up my-auto">
 
@@ -123,26 +120,13 @@
     </div>
 
     <div class="p-6 md:p-8 space-y-6">
-
-      <!-- 基本信息 -->
+      <!-- 姓名 -->
       <div>
         <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">基本信息</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="text-xs font-semibold text-on-surface block mb-1.5">姓名 <span class="text-error">*</span></label>
-            <input id="f_name" type="text" placeholder="考生姓名"
-              class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-on-surface block mb-1.5">准考证号 <span class="text-error">*</span></label>
-            <input id="f_examId" type="text" placeholder="16位准考证号"
-              class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary font-mono">
-          </div>
-          <div class="md:col-span-2">
-            <label class="text-xs font-semibold text-on-surface block mb-1.5">就读学校 <span class="text-error">*</span></label>
-            <input id="f_school" type="text" placeholder="学校全称"
-              class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary">
-          </div>
+        <div>
+          <label class="text-xs font-semibold text-on-surface block mb-1.5">姓名 <span class="text-error">*</span></label>
+          <input id="f_name" type="text" placeholder="考生姓名"
+            class="w-full px-3 py-2.5 border border-outline-variant rounded-lg bg-surface-bright text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary">
         </div>
       </div>
 
@@ -158,12 +142,10 @@
         <div id="scoresGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
       </div>
 
-      <!-- 错误 -->
       <div id="modalError" class="hidden items-center gap-2 bg-red-50 text-error text-sm px-4 py-3 rounded-lg border border-red-200">
         <span class="material-symbols-outlined text-base flex-shrink-0">error_outline</span>
         <span id="modalErrorText"></span>
       </div>
-
     </div>
 
     <div class="px-6 md:px-8 pb-6 pt-4 flex gap-3 justify-end border-t border-surface-variant">
@@ -173,11 +155,10 @@
         <span class="material-symbols-outlined text-base">save</span>保存
       </button>
     </div>
-
   </div>
 </div>
 
-<!-- ====== 删除确认 ====== -->
+<!-- 删除确认 -->
 <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-bg bg-black/40 px-4">
   <div class="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm fade-up p-6">
     <div class="flex items-center gap-3 mb-5">
@@ -207,7 +188,7 @@
 
   async function init() {
     try {
-      const r = await fetch('/api/admin/students');
+      const r = await fetch('/api/admin/students', { cache: 'no-store' });
       const d = await r.json();
       students = d.students; SUBJECTS = d.subjects; SUBJECT_RANGES = d.subjectRanges || {};
       renderStats(); renderTable();
@@ -223,20 +204,19 @@
     document.getElementById('statTotal').textContent = students.length;
     if (!students.length) return;
     const avgs = students.map(avg);
-    const ga = avgs.reduce((a,b)=>a+b,0)/avgs.length;
-    document.getElementById('statAvg').textContent = ga.toFixed(1);
+    document.getElementById('statAvg').textContent = (avgs.reduce((a,b)=>a+b,0)/avgs.length).toFixed(1);
     document.getElementById('statMax').textContent = Math.max(...avgs).toFixed(1);
     document.getElementById('statAuto').textContent = students.filter(s=>s.autoGenerated).length;
   }
 
   function renderTable() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
-    const list = students.filter(s => s.name.toLowerCase().includes(q) || s.examId.toLowerCase().includes(q));
+    const list = students.filter(s => s.name.toLowerCase().includes(q));
     const tbody = document.getElementById('tableBody');
     const empty = document.getElementById('emptyState');
     if (!list.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    tbody.innerHTML = list.map((s,i) => {
+    tbody.innerHTML = list.map(s => {
       const a = avg(s).toFixed(1);
       const autoTag = s.autoGenerated
         ? `<span class="inline-flex items-center gap-0.5 text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full border border-orange-200"><span class="material-symbols-outlined text-xs">auto_awesome</span>自动</span>`
@@ -244,8 +224,6 @@
       return `
         <tr class="hover:bg-surface-bright/60 transition-colors">
           <td class="py-3.5 px-4 font-semibold">${s.name}</td>
-          <td class="py-3.5 px-4 font-mono text-xs text-on-surface-variant">${s.examId}</td>
-          <td class="py-3.5 px-4 hidden lg:table-cell text-xs text-on-surface-variant">${s.school}</td>
           <td class="py-3.5 px-4 text-center hidden md:table-cell font-mono font-bold text-primary">${a}</td>
           <td class="py-3.5 px-4 text-center hidden md:table-cell">${autoTag}</td>
           <td class="py-3.5 px-4 text-right">
@@ -253,7 +231,7 @@
               <button onclick="openModal(${s.id})" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors" title="编辑">
                 <span class="material-symbols-outlined text-lg">edit</span>
               </button>
-              <button onclick="openDeleteModal(${s.id},'${s.name.replace(/'/g,"\\'")}\")" class="p-1.5 rounded-lg hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors" title="删除">
+              <button onclick="openDeleteModal(${s.id},'${s.name.replace(/'/g,"\\'")}')" class="p-1.5 rounded-lg hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors" title="删除">
                 <span class="material-symbols-outlined text-lg">delete</span>
               </button>
             </div>
@@ -267,8 +245,6 @@
     const s = id !== null ? students.find(x=>x.id===id) : null;
     document.getElementById('modalTitle').textContent = s ? `编辑考生：${s.name}` : '新增考生';
     document.getElementById('f_name').value = s?.name || '';
-    document.getElementById('f_examId').value = s?.examId || '';
-    document.getElementById('f_school').value = s?.school || '';
     document.getElementById('modalError').classList.add('hidden');
 
     const grid = document.getElementById('scoresGrid');
@@ -315,9 +291,7 @@
 
   async function saveStudent() {
     const name = document.getElementById('f_name').value.trim();
-    const examId = document.getElementById('f_examId').value.trim();
-    const school = document.getElementById('f_school').value.trim();
-    if (!name || !examId || !school) { showModalError('请填写姓名、准考证号和学校'); return; }
+    if (!name) { showModalError('请填写姓名'); return; }
     const scores = {};
     for (const sub of SUBJECTS) {
       const v = document.getElementById(`score_${sub}`).value;
@@ -330,14 +304,14 @@
       const res = await fetch(isEdit ? `/api/admin/students/${editingId}` : '/api/admin/students', {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, examId, school, scores })
+        body: JSON.stringify({ name, scores })
       });
       const data = await res.json();
       if (!res.ok) { showModalError(data.error || '保存失败'); return; }
       if (isEdit) { const i = students.findIndex(s=>s.id===editingId); if(i!==-1) students[i]=data.student; }
       else students.push(data.student);
       renderStats(); renderTable(); closeModal();
-      showToast('check_circle', isEdit ? '考生信息已更新' : '考生已添加');
+      showToast('check_circle', isEdit ? '成绩已更新' : '考生已添加');
     } catch { showModalError('网络错误，请重试'); }
     finally { btn.disabled=false; btn.innerHTML='<span class="material-symbols-outlined text-base">save</span>保存'; }
   }
@@ -348,15 +322,14 @@
     document.getElementById('deleteModal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }
-
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.add('hidden');
     document.body.style.overflow = ''; deletingId = null;
   }
-
   async function confirmDelete() {
     try {
-      await fetch(`/api/admin/students/${deletingId}`, { method:'DELETE' });
+      const res = await fetch(`/api/admin/students/${deletingId}`, { method: 'DELETE' });
+      if (!res.ok) { showToast('error', '删除失败'); return; }
       students = students.filter(s=>s.id!==deletingId);
       renderStats(); renderTable(); closeDeleteModal();
       showToast('check_circle', '已删除');
@@ -368,7 +341,6 @@
     document.getElementById('modalErrorText').textContent = msg;
     b.classList.remove('hidden'); b.classList.add('flex');
   }
-
   let _tt;
   function showToast(icon, msg) {
     const t = document.getElementById('toast');
