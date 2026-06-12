@@ -140,11 +140,7 @@
 <script>
   const SUBJECT_ORDER = ['语文','数学','英语','物理','化学','生物','思想政治','历史','地理'];
 
-  window.addEventListener('load', () => {
-    const raw = sessionStorage.getItem('queryResult');
-    if (!raw) { document.getElementById('noData').classList.remove('hidden'); return; }
-
-    const s = JSON.parse(raw);
+  function renderStudent(s) {
     document.getElementById('resultCard').classList.remove('hidden');
     const mob = document.getElementById('mobileActions');
     mob.classList.remove('hidden'); mob.classList.add('flex');
@@ -155,7 +151,6 @@
 
     const tbody = document.getElementById('scoresBody');
     const scores = s.scores || {};
-    // 按指定顺序渲染，scores里有的才显示
     const keys = SUBJECT_ORDER.filter(k => k in scores);
     keys.forEach((sub, i) => {
       const score = scores[sub];
@@ -167,6 +162,25 @@
           <td class="py-4 px-4 text-right font-bold text-primary text-base">${score}</td>
         </tr>`;
     });
+  }
+
+  window.addEventListener('load', async () => {
+    // 优先用 URL 中的 id 从服务器取数据（手机兼容）
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    if (id) {
+      try {
+        const res = await fetch(`/api/student/${id}`, { cache: 'no-store' });
+        if (res.ok) { const d = await res.json(); renderStudent(d.student); return; }
+      } catch {}
+    }
+
+    // fallback：sessionStorage
+    const raw = sessionStorage.getItem('queryResult');
+    if (raw) { renderStudent(JSON.parse(raw)); return; }
+
+    document.getElementById('noData').classList.remove('hidden');
   });
 </script>
 </body>
